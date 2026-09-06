@@ -85,8 +85,11 @@ from a computer on the same network.
 
 Stock Xteink firmware has the same feature in its own OPDS settings screen.
 
-If the catalog will not load, try `nav.xml` instead of `catalog.xml` — same site, a
-different feed shape that some clients prefer. Both are published on every build.
+CrossPoint's OPDS client has been read directly to confirm this works: it verifies HTTPS
+against bundled CA roots, which GitHub Pages' certificate chains to, and it accepts our
+catalog's feed shape. A second feed, `nav.xml`, is published on every build as insurance
+for the stock firmware, which has not been inspected — if a device shows an empty
+catalog, enter that URL instead.
 
 ---
 
@@ -143,6 +146,11 @@ chapter with a link, never silently dropped — expect a handful per issue.
 identifies the project and links back to the repository, holds itself to five concurrent
 requests overall and one per host, and stops on `429`/`503` rather than retrying through
 it. If you fork this, leave those limits alone.
+
+**A download that fails may be a memory problem, not a network one.** The reader needs
+40 KB of free heap to open a TLS connection, and refuses the transfer below that with a
+generic "Download failed". A device that has been reading for a while can drift under the
+bar. Reboot it and try again — nothing in this repository can affect it.
 
 **Idle forks stop building.** GitHub disables scheduled workflows in a repository with 60
 days of no activity. It emails you first; any commit re-enables them.

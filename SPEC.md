@@ -295,6 +295,9 @@ key on any of these:
 - `fetch.max_concurrency` not in `1..10`
 - `schedule.slots` empty, or any `label` not matching `^[0-9]{4}$`, or duplicate labels
 - `site.base_url` non-blank and not starting with `https://`
+- `retention_days` x `len(schedule.slots)` > **62** — the device's OPDS parser stores at
+  most 62 entries per feed and silently discards the rest (section 12.3). At the shipped
+  values this is 28. Fail with a message naming the computed entry count.
 
 Validation runs at the very start of every command, before any network call. A bad
 config must fail in under a second, not after twenty article downloads.
@@ -504,7 +507,7 @@ is happiest with.
 | field | value |
 |---|---|
 | identifier | `urn:xtpages:issue:20260906-0300` |
-| title | `Hacker News — 2026-09-06 03:00 UTC` (en dash, U+2013) |
+| title | `HN Daily 2026-09-06 0300 UTC` — ASCII only, no colon; see section 10.2 |
 | language | `config.site.language` |
 | creator | `config.site.author` |
 | date | the slot instant, ISO 8601 with `Z` |
@@ -736,12 +739,13 @@ crashing the build on files written by an older version still inside the 14-day 
         type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
   <entry>
     <id>urn:xtpages:issue:20260906-0300</id>
-    <title>Hacker News — 2026-09-06 03:00 UTC</title>
+    <title>HN Daily 2026-09-06 0300 UTC</title>
     <updated>2026-09-06T03:07:41Z</updated>
     <dc:issued>2026-09-06T03:00:00Z</dc:issued>
     <dc:language>en</dc:language>
     <author><name>Hacker News</name></author>
     <summary type="text">20 stories · A thing someone built · Something behind a paywall · …</summary>
+    <!-- summary is ignored by the Xteink; it is here for desktop OPDS clients -->
     <link rel="http://opds-spec.org/acquisition"
           href="https://owner.github.io/REPO/issues/hn-20260906-0300.epub"
           type="application/epub+zip"
@@ -761,6 +765,29 @@ Requirements, from the OPDS 1.2 specification:
 - `length` is the EPUB's size in bytes. It is optional in the spec, but a device that
   knows the size before downloading can show a progress bar instead of a spinner.
 
+**The entry title and author are not just labels — they become the filename on the SD
+card.** CrossPoint composes the downloaded file's name from the OPDS entry's `author` and
+`title`, never from the URL, defaulting to `"{author} - {title}.epub"`
+(`src/util/OpdsFilename.cpp`). The name is then sanitized: `/ \ : * ? " < > |` each
+become `_`, leading and trailing spaces and dots are trimmed, and the result is capped at
+100 bytes (`src/util/StringUtils.cpp`).
+
+Three rules follow, and they are why the title above looks the way it does:
+
+- **No colons.** `03:00` would land on the SD card as `03_00`.
+- **ASCII only.** Non-ASCII survives sanitizing, but an em dash in a filename is a
+  liability in the device's file browser and over USB. Do not use one here, even though
+  the EPUB's own text may contain any Unicode.
+- **Sort order is filename order.** Because every entry shares the author prefix, a
+  `YYYY-MM-DD HHMM` title makes the SD card sort chronologically for free.
+
+The device shows the entry's **title and author, and nothing else** — `summary` is parsed
+by desktop clients but never read by CrossPoint's parser. Keep the summary for Calibre and
+KOReader, but do not put anything in it the reader needs to see.
+
+Field limits enforced by the device's parser: title 160 bytes, author 120, id 128, href
+768. An entry with an empty title or no usable link is dropped silently.
+
 Generation details:
 
 - Build the XML with `lxml.etree`, never string concatenation. Titles come from the open
@@ -779,10 +806,10 @@ document for no benefit.
 
 ### 10.3 `public/nav.xml` — navigation feed, kept as a fallback
 
-Most OPDS clients accept an acquisition feed as the catalog root. If the Xteink's client
-turns out to reject one and insist on a navigation feed, the fix must not require a code
-change at 6am — so publish this alongside, and the fallback is the user re-entering a
-different URL on the device.
+**CrossPoint does not need this** — its parser never inspects the feed's `kind=` profile
+and happily takes an acquisition feed as the root (section 12.3). Publish it anyway: it
+costs about a kilobyte and one function, and the stock Xteink firmware's OPDS client has
+not been inspected. If a device shows an empty catalog, this is the URL to try instead.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -962,18 +989,43 @@ Stock Xteink firmware exposes the same concept; consult its OPDS settings screen
 CrossPoint can also manage servers from a browser at `http://<device-ip>/settings` while
 the device is in File Transfer mode, which is easier than typing a URL on the device.
 
-**Two things to verify on the first real download, because both are assumptions:**
+Both of the questions this design originally hung on have been **confirmed against the
+CrossPoint firmware source** (section 12.3): HTTPS against GitHub Pages works, and a flat
+acquisition feed is accepted as the catalog root. Still do one hand-built test EPUB
+end-to-end before trusting the pipeline — confirming source-reading against real hardware
+is cheap and the whole design rests on it.
 
-1. **HTTPS.** GitHub Pages is HTTPS-only and redirects plain HTTP, so the device's TLS
-   stack has to work against it. The firmware does HTTPS elsewhere, so this is expected
-   to be fine — but if the catalog fails to load, this is the first suspect, and the
-   symptom is an immediate connection failure rather than an empty list.
-2. **Root feed shape.** If the device rejects `catalog.xml`, re-enter the server URL as
-   `https://OWNER.github.io/REPO/nav.xml` (section 10.3) and browse into "Recent issues".
-   The symptom here is the opposite: the server is reachable but shows nothing.
+### 12.3 Device constraints, confirmed from firmware source
 
-Confirm both with a hand-built test EPUB before trusting the pipeline, and record the
-outcome in the README.
+Read from `crosspoint-reader` at the versions cited. Re-verify if the firmware moves.
+
+| Constraint | Finding | Source |
+|---|---|---|
+| **HTTPS** | Works and is *required* for public servers. The HTTP client sets `config.crt_bundle_attach = esp_crt_bundle_attach`, verifying against the bundled Mozilla CA roots — which GitHub Pages' certificate chains to. `CONFIG_ESP_TLS_INSECURE` is off, so there is no unverified fallback | `src/network/HttpDownloader.cpp` |
+| **Root feed shape** | The parser never looks at the feed's `kind=acquisition` / `kind=navigation` profile. It walks `<entry>` elements and classifies each one. A flat acquisition feed at the root is fine | `lib/OpdsParser/OpdsParser.cpp` |
+| **What makes an entry a book** | A link whose `rel` *contains* `opds-spec.org/acquisition` **and** whose `type` is **exactly** `application/epub+zip` (`strcmp`, so no parameters, no charset, no whitespace) | `OpdsParser.cpp` `startElement` |
+| **Entry cap** | **62 entries per feed** (`ENTRY_STORAGE_CAPACITY 64` minus 2). Extra entries are dropped and a `truncated` flag is set. Because we emit newest-first, truncation drops the *oldest* — the safe direction, but it is why section 6.1 validates the count | `OpdsParser.cpp` |
+| **Field limits** | title 160 bytes, author 120, id 128, href 768, all truncated on a UTF-8 codepoint boundary | `OpdsParser.cpp` |
+| **Entries silently dropped** | Any entry with an empty title or no usable link | `OpdsParser.cpp` `endElement` |
+| **Filename on the SD card** | Composed from the entry's `author` and `title`, default `"{author} - {title}.epub"`, never from the URL. Sanitized: `/ \ : * ? " < > \|` become `_`, leading/trailing spaces and dots trimmed, capped at 100 bytes | `src/util/OpdsFilename.cpp`, `src/util/StringUtils.cpp` |
+| **`summary` is ignored** | Not parsed at all. The device displays title and author only | `OpdsParser.cpp` |
+| **Absolute hrefs** | Passed through untouched; relative ones are resolved against the feed URL. Our absolute-URL choice is the safe one either way | `src/util/UrlUtils.cpp` `buildUrl` |
+| **Redirects** | Followed manually, **max 5 hops**, matching the limit in section 6.4. The OPDS path does *not* use the `downgradeRedirectsToHttp` shortcut — that is the OTA updater's trick — so GitHub Pages' HTTP→HTTPS redirect is never an issue | `HttpDownloader.cpp`, `OpdsBookBrowserActivity.cpp` |
+| **HTTP timeout** | 60 s per request | `HttpDownloader.cpp` |
+| **Pagination** | A feed-level `rel="next"` link is honoured, if a fork ever exceeds 62 entries | `OpdsParser.cpp` |
+| **Basic auth** | Sent preemptively when both username and password are set. We use neither | `HttpDownloader.cpp` |
+
+**One real failure mode this surfaced.** Starting a download requires **40 KB free heap
+and a 20 KB largest-free-block** (`MIN_TLS_FREE_HEAP`, `MIN_TLS_MAX_ALLOC`). Below that
+the firmware refuses the transfer outright, because a TLS session and its ~17 KB record
+buffer would otherwise die mid-stream or abort the device. It drops SD font caches first
+to try to get under the bar. The user-visible symptom is a generic "Download failed" with
+nothing about memory in it.
+
+This is not proportional to our file size — the check is pre-flight — but it is one more
+reason to keep issues lean: images off, `max_article_chars` at its default, and 20
+stories rather than 50. If downloads fail on a device that has been reading for a while,
+rebooting it before downloading is the workaround, not a change to this repository.
 
 ---
 
@@ -1013,11 +1065,11 @@ and lies about why.
 
 | File | Must cover |
 |---|---|
-| `test_config.py` | Each validation rule in 6.1 raises with the offending key named; `base_url` derivation from `GITHUB_REPOSITORY`, including the lowercased owner and the localhost fallback |
+| `test_config.py` | Each validation rule in 6.1 raises with the offending key named, including the 62-entry catalog cap; `base_url` derivation from `GITHUB_REPOSITORY`, including the lowercased owner and the localhost fallback |
 | `test_hn.py` | Deleted/dead/non-story items dropped; self-posts detected from a missing `url`; `min_score` filter; input ID order preserved through concurrent fetch |
 | `test_extract.py` | `article_clean.html` extracts to `ok`; `article_messy.html` extracts body without nav or sidebar text; `article_paywall.html` yields `extraction_failed` via the 500-character floor; non-HTML content-type yields `non_html`; relative links absolutized; sanitizer strips `<script>`, `<style>`, `class`, and `onclick` |
 | `test_epub.py` | Output opens with `ebooklib.epub.read_epub`; chapter count equals story count plus title page; metadata identifier/title/language correct; failed articles produce a notice chapter, never a missing one; **the zip's first entry is `mimetype`, stored uncompressed** — an EPUB that violates this opens on a laptop and fails on hardware |
-| `test_catalog.py` | Feed parses; required elements from 10.2 present; entries newest-first; all hrefs absolute; a title containing `&` and `<` round-trips; a control character is stripped; summary truncated at 400 chars |
+| `test_catalog.py` | Feed parses; required elements from 10.2 present; entries newest-first; all hrefs absolute; a title containing `&` and `<` round-trips; a control character is stripped; summary truncated at 400 chars; **entry titles are pure ASCII and contain no colon**, and every field is inside the device limits in 12.3 (title 160 bytes, author 120, id 128, href 768) |
 | `test_publish.py` | Slot resolution by `--slot`, by `--cron`, and by nearest-time; the day-boundary case where a 21:00 run happens at 00:40 the next day; deduplication excludes the previous issue but **not** the issue being rebuilt; backfill reaches `story_count`; pruning drops exactly the issues past `retention_days` and never touches `catalog.xml`, `nav.xml`, `index.html`, `latest.epub`, or `.nojekyll` |
 | `test_schedule_sync.py` | Cron list in `build.yml` equals `schedule.slots[].cron` in `config.yaml` |
 
@@ -1094,11 +1146,16 @@ Build order that keeps you testable at each step:
 8. `build.yml` + `ci.yml` + `test_schedule_sync.py`.
 9. Human setup from section 12, then the device test.
 
-Assumptions carried by this document that a first run will confirm or refute:
+Assumptions still carried by this document:
 
-- The device's TLS stack works against GitHub Pages (section 12.2).
-- The device accepts an acquisition feed as the catalog root (section 10.3 is the hedge).
-- `github.event.schedule` carries the triggering cron expression, which the nearest-slot
-  fallback in section 7.1 makes non-fatal if it does not.
+- `github.event.schedule` carries the triggering cron expression. The nearest-slot
+  fallback in section 7.1 makes this non-fatal if it does not.
 - `trafilatura.extract()` accepts the keyword arguments in section 8.2 at the pinned
-  version. Verify before writing against them.
+  version. **Verify against the installed version before writing against it** — this one
+  cannot be checked from anywhere but the resolved dependency.
+
+Previously assumed, now **confirmed** from the CrossPoint firmware source and recorded in
+section 12.3: HTTPS against GitHub Pages, and an acquisition feed as the catalog root.
+Reading that source also corrected two things this spec originally had wrong — the SD
+card filename comes from the entry's author and title rather than the URL, and the
+catalog cannot exceed 62 entries.
