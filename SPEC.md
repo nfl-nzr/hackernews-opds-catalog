@@ -507,8 +507,9 @@ Fetch procedure per article:
 5. Retry `fetch.retries` times with `retry_backoff_seconds` backoff **only** on timeouts,
    connection errors, and 5xx responses other than `503`. Never retry any 4xx (`429`
    included) and never retry a `503` — both are the host asking you to stop.
-6. Extract with trafilatura, requesting HTML output, comments off, tables on, images per
-   config, and links preserved:
+6. **Rebuild `<pre>` newlines on the source HTML first** — `html.normalize_pre()`, see
+   section 8.3.1 — then extract with trafilatura, requesting HTML output, comments off,
+   tables on, images per config, and links preserved:
 
    ```python
    trafilatura.extract(
@@ -669,8 +670,20 @@ run-on paragraph with every line break and every level of indentation destroyed.
 to a great deal of code, so left alone this would quietly wreck a meaningful share of
 every issue.
 
-`html.py` must therefore expose `unwrap_pre(html: str) -> str`, applied before
-sanitizing. For each `<pre>` element:
+The rescue is **two stages, on opposite sides of the extractor**, and both are required.
+
+**Stage one — `normalize_pre(html)`, on the raw page, before trafilatura.** Syntax
+highlighters wrap every line of a code block in its own `<div>` (Prism emits
+`<div class="token-line">`), with no newline characters anywhere. Readability extractors
+flatten that markup and join the lines, so by the time the extracted HTML comes back the
+line structure is already gone — no later pass can recover it. `normalize_pre` walks each
+`<pre>` in the *source*, treating `br`, `div`, `p`, `li` and `tr` as line boundaries,
+and replaces the block's children with plain text carrying real newlines. Verified
+against a live Prism-highlighted article: without this the extractor returns
+`const osc = ctx.createOscillator();osc.frequency.value = 440;` as one line.
+
+**Stage two — `unwrap_pre(html)`, on the extracted HTML, before sanitizing.** For each
+`<pre>` element:
 
 1. Take its full text content, including any nested `<code>`.
 2. Expand tabs to four spaces, then split on `\n`.
@@ -679,6 +692,9 @@ sanitizing. For each `<pre>` element:
 4. Emit each line as `<p class="code">…</p>`, XML-escaped. Represent a blank line as a
    single U+00A0 so it survives as a blank line rather than collapsing away.
 5. Replace the original `<pre>` with that run of paragraphs.
+
+Both stages share the same line-boundary walk, so a `<pre>` that survives extraction
+with its markup intact is handled identically either way.
 
 The U+00A0 substitution is what makes indentation survive, and it works because the
 firmware's whitespace test is a byte-level ASCII check — `' '`, `'\r'`, `'\n'`, `'\t'`

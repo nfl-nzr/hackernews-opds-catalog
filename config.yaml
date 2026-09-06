@@ -1,0 +1,54 @@
+# xtpages control panel. See SPEC.md section 6.
+# Everything a forker would reasonably change lives here, EXCEPT the schedule
+# times themselves — those are in .github/workflows/build.yml as well, and both
+# must agree. tests/test_schedule_sync.py fails if they drift apart.
+
+# ─── Content ────────────────────────────────────────────────────────────────
+content:
+  feed: top              # top | best | new  → HN's topstories/beststories/newstories
+  story_count: 20        # articles per issue
+  min_score: 0           # skip stories below this point total (0 = no filter)
+  skip_domains: []       # e.g. ["twitter.com", "x.com"] — never fetched, link-only
+  include_images: false  # true is untested on a 4-inch greyscale panel
+  max_article_chars: 200000
+  include_hn_discussion_link: true
+
+# ─── Deduplication ──────────────────────────────────────────────────────────
+dedupe:
+  enabled: true
+  lookback_issues: 1     # how many previous issues' stories to exclude
+  candidate_pool: 100    # story IDs pulled from the feed to backfill from
+
+# ─── Retention ──────────────────────────────────────────────────────────────
+retention_days: 14
+
+# ─── Fetching ───────────────────────────────────────────────────────────────
+fetch:
+  timeout_seconds: 20
+  max_concurrency: 5     # be a polite neighbour; do not raise casually
+  retries: 2
+  retry_backoff_seconds: 2
+  max_bytes: 5000000     # abort a download past 5 MB
+  user_agent: "xtpages/1.0 (+https://github.com/OWNER/REPO)"
+
+# ─── Site identity ──────────────────────────────────────────────────────────
+site:
+  base_url: ""                  # blank → derived from $GITHUB_REPOSITORY
+  title: "Hacker News Daily"    # catalog + landing page name
+  title_short: "HN Daily"       # leads each issue title, so it becomes part of the
+                                # SD card filename: ASCII, no colon (SPEC section 10.2)
+  author: "Hacker News"
+  language: "en"
+
+# ─── Schedule (MUST match .github/workflows/build.yml) ──────────────────────
+schedule:
+  slots:
+    - cron: "0 3 * * *"
+      label: "0300"
+    - cron: "0 21 * * *"
+      label: "2100"
+
+# ─── Reserved for v2 — not implemented ──────────────────────────────────────
+# comments:
+#   enabled: false
+#   per_story: 10

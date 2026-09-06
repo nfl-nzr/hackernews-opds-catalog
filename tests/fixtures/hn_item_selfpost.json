@@ -1,0 +1,10 @@
+{
+  "id": 45123401,
+  "by": "another",
+  "descendants": 88,
+  "score": 288,
+  "time": 1788651000,
+  "title": "Ask HN: how do you test this?",
+  "type": "story",
+  "text": "<p>We have a script that does this:</p><pre>def check(x):\n    if x &gt; 0:\n        return True\n    return False</pre><p>Is there a better way?</p>"
+}

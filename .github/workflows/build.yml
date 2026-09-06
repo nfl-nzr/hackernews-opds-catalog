@@ -1,0 +1,81 @@
+name: Build issue
+
+on:
+  schedule:
+    # See SPEC.md section 7 — the schedule lives in TWO places.
+    # To change it, edit BOTH the cron lines here AND schedule.slots in config.yaml.
+    # tests/test_schedule_sync.py fails if they disagree.
+    # cron defaults to UTC; an optional IANA `timezone:` key may be set per entry.
+    # Scheduled runs are delayed under load and may be dropped entirely. The issue
+    # is named for its slot, never the run time. Recover a dropped run with a
+    # manual workflow_dispatch for that slot.
+    - cron: "0 3 * * *"
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "Slot label to build, e.g. 0300. Blank picks the nearest slot."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xtpages-publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - run: uv sync --frozen
+
+      - name: Fetch published site into ./public
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git clone --depth 1 --branch gh-pages \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" public
+          else
+            echo "gh-pages does not exist yet; starting a fresh site"
+            mkdir -p public
+          fi
+
+      - name: Build issue
+        env:
+          # Never interpolate ${{ }} directly into a run: script — that is GitHub's
+          # documented script-injection hazard. Bind to env and quote instead.
+          XT_CRON: ${{ github.event.schedule }}
+          XT_SLOT: ${{ github.event.inputs.slot }}
+        run: |
+          uv run xtpages build \
+            --cron "$XT_CRON" \
+            --slot "$XT_SLOT" \
+            --public-dir public
+
+      - name: Publish to gh-pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd public
+          touch .nojekyll   # belt-and-braces; `xtpages build` already wrote it
+          rm -rf .git
+          git init -q -b gh-pages
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Build $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q --force \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages

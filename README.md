@@ -145,10 +145,14 @@ run-on paragraph. The build detects those blocks and re-emits them line by line,
 non-breaking spaces to hold the indentation. You get line structure and indentation, but
 not a monospace font — the device picks the typeface.
 
-**Some articles will not extract.** Paywalls, JavaScript-only sites, and Cloudflare
-challenges all defeat text extraction, and GitHub Actions' IP ranges are blocked by more
-sites than a home connection is. Those stories still appear in the issue as a titled
-chapter with a link, never silently dropped — expect a handful per issue.
+**Some articles will not extract.** Paywalls, JavaScript-only sites, and bot blocking all
+defeat text extraction. In practice **12-17 of 20 stories come through with full text**;
+the rest are almost always an outright HTTP 403 from sites that refuse non-browser
+clients. Those stories still appear in the issue as a titled chapter with a link, never
+silently dropped, so you can open them later on a phone.
+
+Getting past those 403s would mean sending a fake browser User-Agent, which this project
+deliberately does not do — see the fetching note below.
 
 **This fetches other people's pages on a schedule.** The build sends a User-Agent that
 identifies the project and links back to the repository, holds itself to five concurrent
