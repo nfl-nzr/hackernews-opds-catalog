@@ -2,8 +2,8 @@
 
 A daily Hacker News reading digest, delivered to an e-ink reader over WiFi.
 
-Twice a day a GitHub Action reads Hacker News' top 20 stories, downloads each linked
-article, strips it down to readable text, and packs the lot into a single EPUB. The file
+Twice a day a GitHub Action reads Hacker News' top stories — twenty by default, and
+configurable — downloads each linked article, strips it down to readable text, and packs the lot into a single EPUB. The file
 is published to a free GitHub Pages site along with an **OPDS catalog** — a standard
 Atom XML file listing publications and where to download them, which e-reader firmware
 knows how to browse. Point the reader at the catalog URL once; after that, each new
@@ -26,7 +26,7 @@ No server, no database, no API keys, no cost.
 
 ```
 cron 03:00 UTC ─┐
-                ├─→ GitHub Actions ─→ fetch HN top 20
+                ├─→ GitHub Actions ─→ fetch HN top stories
 cron 21:00 UTC ─┘                     download + extract each article
                                       build one EPUB
                                       publish to gh-pages, prune past 14 days
@@ -110,10 +110,12 @@ GitHub parses the workflow file itself to decide when to run, before any of this
 project's code executes, so a cron expression genuinely cannot be read from
 `config.yaml`. Edit both. `tests/test_schedule_sync.py` fails if you edit only one.
 
-Times are **UTC** — GitHub cron has no timezone support. Scheduled runs are also
-routinely 5–30 minutes late when GitHub is busy; each issue is named for its scheduled
-slot rather than the time the job actually started, so a late run still produces a
-correctly named file.
+Times default to **UTC**; a `timezone:` key can be set per schedule entry if you would
+rather write local times. Scheduled runs are delayed when GitHub is busy — worst at the
+top of the hour — and under heavy load can be **dropped entirely**. Each issue is named
+for its scheduled slot rather than the time the job actually started, so a late run still
+produces a correctly named file, and a dropped one is recovered by running the workflow
+manually for that slot.
 
 ---
 
@@ -150,8 +152,10 @@ chapter with a link, never silently dropped — expect a handful per issue.
 
 **This fetches other people's pages on a schedule.** The build sends a User-Agent that
 identifies the project and links back to the repository, holds itself to five concurrent
-requests overall and one per host, and stops on `429`/`503` rather than retrying through
-it. If you fork this, leave those limits alone.
+requests overall and one per article host, and stops on `429`/`503` rather than retrying
+through it. (Hacker News' own JSON API is exempt from the per-host limit — it is a public
+API with no published rate limit, and it is the only way to read the feed.) If you fork
+this, leave those limits alone.
 
 **A download that fails may be a memory problem, not a network one.** The reader needs
 40 KB of free heap to open a TLS connection, and refuses the transfer below that with a

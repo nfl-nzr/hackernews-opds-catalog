@@ -99,9 +99,9 @@ Do not design around a background-sync capability that does not exist.
                  │       ├── extract.py  fetch + readability│──→ the open web
                  │       ├── epub.py     build the EPUB     │
                  │       └── writes public/issues/*.epub    │
-                 │  4. xtpages prune     drop >14 days      │
-                 │  5. xtpages catalog   regenerate XML     │
-                 │  6. force-push ./public → gh-pages       │
+                 │       ├── prune       drop >14 days      │
+                 │       └── catalog     regenerate XML     │
+                 │  4. force-push ./public → gh-pages       │
                  └──────────────────────────────────────────┘
                                      ↓
                      https://OWNER.github.io/REPO/catalog.xml
@@ -124,7 +124,7 @@ Create exactly this structure.
 ├── .github/
 │   └── workflows/
 │       ├── build.yml           # the scheduled build (section 11)
-│       └── ci.yml              # lint + tests on push/PR (section 14.4)
+│       └── ci.yml              # lint + tests on push/PR (section 11.2)
 ├── src/
 │   └── xtpages/
 │       ├── __init__.py         # __version__ = "1.0.0"
@@ -154,10 +154,13 @@ Create exactly this structure.
 │   ├── test_catalog.py
 │   ├── test_publish.py
 │   └── test_schedule_sync.py
+├── scripts/
+│   └── serve.sh                # local static server for testing (section 14.4)
 ├── config.yaml                 # the forker's control panel (section 6)
 ├── pyproject.toml
 ├── uv.lock                     # committed
 ├── .gitignore
+├── LICENSE                     # MIT, as the README declares
 ├── README.md                   # human setup guide (already written — keep in sync)
 └── SPEC.md                     # this file
 ```
@@ -214,14 +217,21 @@ dev = ["pytest>=8", "ruff>=0.6"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+addopts = "-m 'not live'"
+markers = ["live: hits the network; deselected by default (section 14.2)"]
 ```
 
 Use `uv sync` to install and **commit `uv.lock`** — a scheduled job that silently picks
 up a breaking library release at 03:00 is exactly the failure mode a lockfile prevents.
 
-**Verify library signatures against the installed version before writing against them.**
-In particular `trafilatura.extract()` has gained and renamed keyword arguments across
-releases; confirm the ones in section 8.2 exist in the version `uv` resolves.
+**Library APIs used here have been smoke-tested at the resolved versions** — trafilatura
+2.2.0, EbookLib 0.20, nh3 0.3.7, httpx 0.28.1 — and every call in sections 8.2 and 8.3
+was confirmed against them. Still re-check signatures if `uv` resolves something newer.
+If any keyword argument named in section 8.2 is missing, **stop and record the deviation
+in your summary** rather than guessing a replacement: extraction quality is the single
+thing that decides whether an issue is worth reading.
 
 ---
 
@@ -294,10 +304,15 @@ key on any of these:
 - `retention_days` < 1
 - `fetch.max_concurrency` not in `1..10`
 - `schedule.slots` empty, or any `label` not matching `^[0-9]{4}$`, or duplicate labels
-- `site.base_url` non-blank and not starting with `https://`
-- `retention_days` x `len(schedule.slots)` > **62** — the device's OPDS parser stores at
-  most 62 entries per feed and silently discards the rest (section 12.3). At the shipped
-  values this is 28. Fail with a message naming the computed entry count.
+- `site.base_url` non-blank and not starting with `https://`, **except** that
+  `http://localhost[:port]`, `http://127.0.0.1[:port]`, and `http://` on a private-LAN
+  address (10/8, 172.16/12, 192.168/16) are all permitted. Local testing (section 14.4)
+  cannot use HTTPS, and section 6.2's own no-`GITHUB_REPOSITORY` fallback is an
+  `http://localhost` URL — without this exemption every local command would exit 2.
+- `retention_days` x `len(schedule.slots)` + 1 > **62** — the device's OPDS parser stores
+  at most 62 entries per feed and silently discards the rest (section 12.3). The `+ 1`
+  covers the issue just built, which exists before pruning runs. At the shipped values
+  this is 29. Fail with a message naming the computed entry count.
 
 Validation runs at the very start of every command, before any network call. A bad
 config must fail in under a second, not after twenty article downloads.
@@ -333,7 +348,12 @@ following non-negotiable, because they are what keeps this from being abusive:
 - The User-Agent **must** identify the project and carry a URL a site owner can visit to
   see what is hitting them. Never impersonate a browser.
 - `max_concurrency` is a global ceiling of 5 across the whole run, and additionally
-  **never more than one in-flight request per host**.
+  **never more than one in-flight request per host** — with one exemption: the Hacker
+  News API host (`hacker-news.firebaseio.com`). It is a public JSON API with no
+  documented rate limit, it is the only way to read the feed, and one story detail per
+  round trip would make the fetch stage needlessly slow. It is bounded by
+  `max_concurrency` alone (section 8.1). The per-host rule exists to protect the article
+  hosts, which did not ask for our traffic.
 - Honour HTTP `429` and `503` by giving up on that URL for this run. Do not retry
   through a rate-limit response; a link-only entry is the correct outcome.
 - Never follow more than 5 redirects, and never fetch a non-`http(s)` scheme.
@@ -348,6 +368,10 @@ GitHub Actions reads `on.schedule.cron` from the workflow YAML file itself. It i
 by GitHub before any of our code runs, so **a cron expression cannot be read from
 `config.yaml`.** There is no workaround short of a self-modifying workflow, which is not
 worth it.
+
+(A `schedule` entry also accepts an optional IANA `timezone:` key, so a forker who wants
+07:00 local rather than 07:00 UTC can set one. It lives in the workflow file with the
+cron, and changes nothing about the two-places problem below.)
 
 So the schedule lives in two places, and they must agree:
 
@@ -370,9 +394,12 @@ on:
     # │   1. the cron lines below                                       │
     # │   2. schedule.slots in config.yaml (cron + a 4-digit label)     │
     # │ tests/test_schedule_sync.py fails if they disagree.             │
-    # │ Times are UTC. GitHub does not honour timezones in cron.        │
-    # │ Scheduled runs are often 5-30 minutes late under load; the      │
-    # │ issue is still named for its slot, not the actual run time.     │
+    # │ cron defaults to UTC. An optional IANA `timezone:` key may be   │
+    # │ set per entry (e.g. timezone: "America/New_York").              │
+    # │ Scheduled runs are delayed under load, worst at the top of the  │
+    # │ hour, and may be DROPPED entirely. The issue is always named    │
+    # │ for its slot, never the actual run time; a dropped run is       │
+    # │ recovered with a manual workflow_dispatch.                      │
     # └─────────────────────────────────────────────────────────────────┘
     - cron: "0 3 * * *"
     - cron: "0 21 * * *"
@@ -389,11 +416,18 @@ xtpages build --cron "${{ github.event.schedule }}"
 
 `publish.resolve_slot()` implements this precedence:
 
-1. An explicit `--slot LABEL` flag wins outright.
-2. Otherwise, if `--cron` is given and matches a `schedule.slots[].cron`, use that
-   slot's label. Match on the exact string after collapsing internal whitespace.
+0. **An empty or whitespace-only `--slot` value is treated exactly as if the flag were
+   absent, and likewise for `--cron`.** This is not a corner case: the workflow passes
+   `--slot` unconditionally, and on every scheduled run `github.event.inputs.slot` is the
+   empty string, so this rule governs the most frequently executed path in the system —
+   including the first-run setup in section 12.1.
+1. An explicit non-empty `--slot LABEL` wins outright. Fail with exit code 2 if the label
+   matches no configured slot; a typo must not silently fall through to a guess.
+2. Otherwise, if a non-empty `--cron` matches a `schedule.slots[].cron`, use that slot's
+   label. Match on the exact string after collapsing internal whitespace.
 3. Otherwise (manual dispatch with no input, or a local run) pick the slot whose time is
-   nearest to the current UTC time, and warn which one was chosen.
+   nearest to the current UTC time, and warn which one was chosen. On an exact tie,
+   choose the **later** slot.
 
 The **issue date** is the UTC date of the slot instant nearest to the run time, so a
 21:00 job that actually runs at 00:40 the next day is still `…-2100` of the previous
@@ -465,7 +499,8 @@ Fetch procedure per article:
 3. Reject on `Content-Type` not `text/html` or `application/xhtml+xml` → `non_html`.
 4. Stream and abort past `fetch.max_bytes` → `fetch_error`.
 5. Retry `fetch.retries` times with `retry_backoff_seconds` backoff **only** on timeouts,
-   connection errors, and 5xx. Never retry a 4xx, a `429`, or a `503`.
+   connection errors, and 5xx responses other than `503`. Never retry any 4xx (`429`
+   included) and never retry a `503` — both are the host asking you to stop.
 6. Extract with trafilatura, requesting HTML output, comments off, tables on, images per
    config, and links preserved:
 
@@ -489,9 +524,14 @@ Fetch procedure per article:
    **unwrap `<pre>` blocks (section 8.3.1)**, then sanitize (section 8.3), then truncate
    to `content.max_article_chars` at a tag boundary. That order matters: the unwrap needs
    the original `<pre>` element, which the sanitizer would otherwise have flattened.
+   Passing `url=` in step 6 already absolutizes most links, so this step is a safety net
+   for anything trafilatura left relative, not the primary mechanism.
 
-Self-posts skip fetching entirely: `story.text` is HN-supplied HTML, so sanitize it and
-set `self_post`.
+Self-posts skip fetching but **not the rest of the pipeline**: `story.text` is HN-supplied
+HTML, so run it through the same unwrap-then-sanitize sequence and set `self_post`. Ask HN
+and Show HN posts routinely contain `<pre>` code blocks — precisely the case section 8.3.1
+exists to rescue — so skipping the unwrap here would reintroduce the bug for the posts
+most likely to hit it.
 
 ### 8.3 `epub.py` — EPUB generation
 
@@ -499,16 +539,21 @@ set `self_post`.
 def build_epub(cfg: Config, issue: Issue, articles: list[Article], out_path: Path) -> EpubResult: ...
 ```
 
-Use `ebooklib`. Produce EPUB 3 with an NCX table of contents included for EPUB 2
-compatibility, which is what `ebooklib` does by default and what the device's renderer
-is happiest with.
+Use `ebooklib`. Produce EPUB 3 and include an NCX table of contents for EPUB 2
+compatibility. **`ebooklib` generates neither by default** — a book built without them
+ships with no `nav.xhtml` and no `toc.ncx` at all. `epub.py` must explicitly
+`book.add_item(epub.EpubNcx())` and `book.add_item(epub.EpubNav())`, set `book.toc` and
+`book.spine` (with `"nav"` first in the spine), and only then does the writer emit
+`EPUB/toc.ncx` and `EPUB/nav.xhtml`. Both were verified present at EbookLib 0.20 with
+that setup. Shipping both is deliberate: the device prefers the EPUB 3 nav and falls back
+to the NCX (section 12.3).
 
 **Metadata**
 
 | field | value |
 |---|---|
 | identifier | `urn:xtpages:issue:20260906-0300` |
-| title | `HN Daily 2026-09-06 0300 UTC` — ASCII only, no colon; see section 10.2 |
+| title | `{site.title_short} {date} {slot} UTC`, e.g. `HN Daily 2026-09-06 0300 UTC` — ASCII only, no colon; see section 10.2. Add `site.title_short` to `config.yaml`, defaulting to `HN Daily`, so a forker renaming the site renames the issues too |
 | language | `config.site.language` |
 | creator | `config.site.author` |
 | date | the slot instant, ISO 8601 with `Z` |
@@ -531,6 +576,10 @@ is happiest with.
 <hr/>
 {sanitized article body}
 ```
+
+When `content.include_hn_discussion_link` is `false`, the meta line drops the
+` · <a href="{hn_url}">Discussion</a>` fragment and keeps the score and domain. That is
+the setting's only effect anywhere in the build.
 
 For any non-`ok`, non-`self_post` status, the body is exactly:
 
@@ -556,9 +605,24 @@ device actually recognizes, read from `ChapterHtmlSlimParser.cpp` and recorded i
 accomplish nothing, which is why they are not on the list. `ul` and `ol` are kept even
 though the device ignores the containers themselves, because `li` renders its own bullet.
 
-The sanitizer strips `class` from *article* HTML. The `class` values on the meta and
-notice paragraphs are added by our own chapter template afterwards, never inherited from
-a source page.
+**Two settings on `nh3.clean()` are not optional.**
+
+`link_rel=None` — nh3's default injects `rel="noopener noreferrer"` into every `<a>`,
+which is an attribute outside our allowlist. The device ignores unknown attributes so it
+is harmless on hardware, but it contradicts this section and would fail a strict test.
+
+`attributes={"a": {"href"}, "p": {"class"}}` — `class` must survive on `<p>`, because
+section 8.3.1 emits `<p class="code">` *before* the sanitizer runs, and the stylesheet
+and section 14.1 both depend on that class reaching the artifact. nh3 filters attribute
+*names*, not values, so allowing `class` on `p` would also let a source article's own
+`<p class="meta">` through — and that would silently inherit our stylesheet's italic
+rule. **After sanitizing, drop every `class` attribute whose value is not exactly
+`code`.** Values we assign ourselves (`meta`, `notice`) are added by the chapter template
+afterwards and never come from a source page.
+
+The tag allowlist is deliberately a *subset* of what the device recognizes (section
+12.3): `div`, `span`, `ins`, `strike`, `ruby`, and `rt` are all supported by the renderer
+but add nothing to an article digest, so they are stripped to keep the markup uniform.
 
 **Stylesheet** — one small `style.css`, sizes in `em` only, never `px`, because the
 device controls font size and a fixed pixel size fights it:
@@ -670,7 +734,10 @@ Selection then works like this:
 `index.html`, or `.nojekyll`. It returns the list of deleted slugs for the log.
 
 **`latest.epub`** is a byte copy — not a symlink, which git and static hosting handle
-inconsistently — of the newest issue's EPUB, refreshed after every build.
+inconsistently — refreshed after every build. It always mirrors the issue with the
+**greatest slot instant among all surviving manifests**, which is not necessarily the
+issue just built: a manual `--slot`/`--cron` run can rebuild an older slot, and that must
+not demote the newest issue. Compute it after pruning, from the manifests on disk.
 
 ---
 
@@ -684,13 +751,20 @@ xtpages doctor  [--config PATH]
 ```
 
 - `build` — the whole pipeline for one issue: select, fetch, extract, write EPUB, write
-  manifest, refresh `latest.epub`, then prune, then regenerate catalog + nav + index.
+  manifest, refresh `latest.epub`, then prune, then regenerate catalog + nav + index +
+  `.nojekyll`. **`build` owns `.nojekyll`**; the workflow's `touch` is redundant
+  insurance, not the source of truth.
   One command does everything the workflow needs; `catalog` and `prune` exist separately
   for local repair.
 - `--dry-run` — do everything except write files; print what would be written. Used to
-  test extraction changes without touching the site.
+  test extraction changes without touching the site. A missing `--public-dir` is treated
+  as an empty site (no manifests, so no deduplication), and **a dry run never creates
+  directories** — including the public directory itself.
 - `doctor` — validate `config.yaml`, confirm cron/config schedule agreement, resolve
-  `site.base_url`, and print the OPDS URL to enter on the device. No network calls.
+  `site.base_url`, and print the OPDS URL to enter on the device. No network calls. It
+  reads the workflow at `.github/workflows/build.yml` relative to the repository root,
+  located by walking up from `--config`; if the file is absent, report that as a warning
+  rather than an error, so `doctor` still works outside a checkout.
 
 Defaults: `--config ./config.yaml`, `--public-dir ./public`.
 
@@ -750,7 +824,9 @@ run, catalog regeneration input, and post-mortem debugging of a bad issue.
       "error": "body under 500 chars after extraction"
     }
   ],
-  "counts": { "ok": 18, "self_post": 1, "extraction_failed": 1, "requested": 20 },
+  "counts": { "requested": 20, "returned": 20, "ok": 18, "self_post": 1,
+              "extraction_failed": 1, "non_html": 0, "fetch_error": 0,
+              "skipped_domain": 0 },
   "epub": {
     "filename": "hn-20260906-0300.epub",
     "bytes": 412345,
@@ -845,10 +921,12 @@ Generation details:
 - Build the XML with `lxml.etree`, never string concatenation. Titles come from the open
   web and will eventually contain `&`, `<`, and stray control characters.
 - All timestamps are ISO 8601 UTC with a literal `Z`, seconds precision, no microseconds.
-- `feed/updated` is the newest entry's `updated`.
+- Which timestamp goes where: an entry's `<updated>` is that issue's `built_at`, its
+  `<dc:issued>` is its `slot_at`, and both `catalog.xml`'s and `nav.xml`'s `feed/updated`
+  are the greatest `built_at` across all retained issues.
 - The `summary` lists the story titles joined by ` · `, truncated to **400 characters**
-  with a trailing `…`. This is what the device shows under each catalog row, so leading
-  with the count then the headlines makes the list scannable without opening anything.
+  with a trailing `…`. The Xteink never displays it (section 12.3); it is there so
+  desktop OPDS clients like Calibre and Thorium show something useful.
 - Strip characters illegal in XML 1.0 (most C0 controls) from every text node.
 
 The `start` link points at this same acquisition feed. The specification associates
@@ -911,9 +989,10 @@ on:
     # See SPEC.md section 7 — the schedule lives in TWO places.
     # To change it, edit BOTH the cron lines here AND schedule.slots in config.yaml.
     # tests/test_schedule_sync.py fails if they disagree.
-    # Times are UTC; GitHub cron has no timezone support.
-    # Scheduled runs are commonly 5-30 minutes late; the issue is still named
-    # for its slot, not for the time the job actually started.
+    # cron defaults to UTC; an optional IANA `timezone:` key may be set per entry.
+    # Scheduled runs are delayed under load and may be dropped entirely. The issue
+    # is named for its slot, never the run time. Recover a dropped run with a
+    # manual workflow_dispatch for that slot.
     - cron: "0 3 * * *"
     - cron: "0 21 * * *"
   workflow_dispatch:
@@ -935,9 +1014,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
           python-version: "3.12"
           enable-cache: true
@@ -958,10 +1037,15 @@ jobs:
           fi
 
       - name: Build issue
+        env:
+          # Never interpolate ${{ }} directly into a run: script — that is GitHub's
+          # documented script-injection hazard. Bind to env and quote instead.
+          XT_CRON: ${{ github.event.schedule }}
+          XT_SLOT: ${{ github.event.inputs.slot }}
         run: |
           uv run xtpages build \
-            --cron "${{ github.event.schedule }}" \
-            --slot "${{ github.event.inputs.slot }}" \
+            --cron "$XT_CRON" \
+            --slot "$XT_SLOT" \
             --public-dir public
 
       - name: Publish to gh-pages
@@ -970,7 +1054,7 @@ jobs:
         run: |
           set -euo pipefail
           cd public
-          touch .nojekyll
+          touch .nojekyll   # belt-and-braces; `xtpages build` already wrote it
           rm -rf .git
           git init -q -b gh-pages
           git config user.name  "github-actions[bot]"
@@ -1017,7 +1101,9 @@ On `push` and `pull_request`: `uv sync --frozen`, `uv run ruff check .`,
 
 1. Push the code to a **public** repository. Private repos need a paid plan for Pages.
 2. **Settings → Actions → General → Workflow permissions** → "Read and write
-   permissions". Without this, the publish step gets a read-only token and fails.
+   permissions". The workflow's own `permissions: contents: write` block is what
+   actually grants the push, so this is belt-and-braces — but it keeps the repository
+   working if that block is ever removed, and costs nothing.
 3. Run the workflow once by hand: **Actions → Build issue → Run workflow**, leaving the
    slot input blank. This creates the `gh-pages` branch, which cannot be selected in
    settings until it exists.
@@ -1109,12 +1195,26 @@ watching, and an issue with three link-only entries is still a good morning's re
 | `config.yaml` invalid | Fail before any network call | 2 |
 | Previous manifest missing or corrupt | Warn; treat deduplication as a no-op for that manifest | 0 |
 | Slot cannot be resolved from `--cron` | Fall back to nearest-slot, warn | 0 |
+| `--slot` names a label not in config | Fail immediately; a typo must not become a guess | 2 |
 | An issue for this slot already exists | Overwrite EPUB, manifest, and catalog entry | 0 |
-| Publish push rejected | Fail the job; the next run republishes the full site anyway | 1 |
+| EPUB, manifest, or catalog write fails | Fail after selection; see the atomicity rule below | 1 |
+| A scheduled run is delayed or dropped by GitHub | Nothing to do. The next run dedupes against whatever manifest is newest, so a gap self-corrects. Recover a specific slot with a manual `workflow_dispatch` | — |
 
-On exit code 3 the workflow fails, and GitHub emails the repository owner about a failed
-scheduled run — which is the intended and only alerting mechanism. Do not add
-notification integrations.
+The zero-stories check short-circuits **after story selection and before any article
+fetch** — there is no point downloading twenty articles to discover the feed was empty.
+
+**Writing is atomic.** Write the EPUB, each manifest, and each catalog file to a
+temporary file in the destination directory and `os.replace()` it into place. A crash or
+a full disk then leaves the previous good file, never a truncated one that the next run
+would read back as a corrupt manifest.
+
+Publishing is the workflow's job, not the CLI's — `xtpages` never pushes. A rejected
+push fails the *job* while leaving the site as it was; because every run regenerates the
+whole site from the manifests, the next successful run repairs it with no intervention.
+
+On exit codes 1, 2, and 3 the workflow fails, and GitHub emails the repository owner
+about a failed scheduled run — which is the intended and only alerting mechanism. Do not
+add notification integrations.
 
 The site is regenerated wholesale from the manifests on every run, so a single failed
 run is self-healing: the next successful run rebuilds a correct catalog with no manual
@@ -1135,7 +1235,7 @@ and lies about why.
 | `test_config.py` | Each validation rule in 6.1 raises with the offending key named, including the 62-entry catalog cap; `base_url` derivation from `GITHUB_REPOSITORY`, including the lowercased owner and the localhost fallback |
 | `test_hn.py` | Deleted/dead/non-story items dropped; self-posts detected from a missing `url`; `min_score` filter; input ID order preserved through concurrent fetch |
 | `test_extract.py` | `article_clean.html` extracts to `ok`; `article_messy.html` extracts body without nav or sidebar text; `article_paywall.html` yields `extraction_failed` via the 500-character floor; non-HTML content-type yields `non_html`; relative links absolutized; sanitizer strips `<script>`, `<style>`, `class`, and `onclick`; **`unwrap_pre` turns a multi-line indented `<pre>` into one `<p class="code">` per line, converts leading spaces to U+00A0 while leaving interior spaces as ASCII, preserves blank lines, expands tabs to four spaces, and leaves a document with no `<pre>` unchanged**; and no `<pre>` survives sanitizing |
-| `test_epub.py` | Output opens with `ebooklib.epub.read_epub`; chapter count equals story count plus title page; metadata identifier/title/language correct; failed articles produce a notice chapter, never a missing one; **the zip's first entry is `mimetype`, stored uncompressed** — an EPUB that violates this opens on a laptop and fails on hardware; both `toc.ncx` and `nav.xhtml` are present; and the stylesheet declares no property outside the supported set in 12.3 |
+| `test_epub.py` | Output opens with `ebooklib.epub.read_epub`; the spine holds exactly `story_count` chapters plus the title page (`nav.xhtml` is a manifest item, not a spine entry, and is excluded from that count); metadata identifier/title/language correct; failed articles produce a notice chapter, never a missing one; **the zip's first entry is `mimetype`, stored uncompressed** — an EPUB that violates this opens on a laptop and fails on hardware; both `toc.ncx` and `nav.xhtml` are present; and the stylesheet declares no property outside the supported set in 12.3 |
 | `test_catalog.py` | Feed parses; required elements from 10.2 present; entries newest-first; all hrefs absolute; a title containing `&` and `<` round-trips; a control character is stripped; summary truncated at 400 chars; **entry titles are pure ASCII and contain no colon**, and every field is inside the device limits in 12.3 (title 160 bytes, author 120, id 128, href 768) |
 | `test_publish.py` | Slot resolution by `--slot`, by `--cron`, and by nearest-time; the day-boundary case where a 21:00 run happens at 00:40 the next day; deduplication excludes the previous issue but **not** the issue being rebuilt; backfill reaches `story_count`; pruning drops exactly the issues past `retention_days` and never touches `catalog.xml`, `nav.xml`, `index.html`, `latest.epub`, or `.nojekyll` |
 | `test_schedule_sync.py` | Cron list in `build.yml` equals `schedule.slots[].cron` in `config.yaml` |
@@ -1170,10 +1270,14 @@ The build is complete when every one of these is true:
 
 ### 14.4 Manual verification script
 
-Provide `scripts/serve.sh`: `python -m http.server 8000 --directory public`. With
-`site.base_url` set to `http://localhost:8000/`, this lets the catalog be opened in a
-desktop OPDS client, or by the device itself over the local network, before anything is
-published.
+Provide `scripts/serve.sh`: `python -m http.server 8000 --directory public`. Section
+6.1 exempts local addresses from the HTTPS rule precisely so this works.
+
+For a **desktop** OPDS client, set `site.base_url` to `http://localhost:8000/`. For the
+**device**, `localhost` is the device itself and will fail — use the serving machine's
+LAN address, `http://192.168.x.x:8000/`, and set `base_url` to match, because the
+catalog's acquisition hrefs are absolute and must resolve from the reader's side of the
+network. This is the cheapest way to test a real download without publishing anything.
 
 ---
 
@@ -1217,12 +1321,16 @@ Assumptions still carried by this document:
 
 - `github.event.schedule` carries the triggering cron expression. The nearest-slot
   fallback in section 7.1 makes this non-fatal if it does not.
-- `trafilatura.extract()` accepts the keyword arguments in section 8.2 at the pinned
-  version. **Verify against the installed version before writing against it** — this one
-  cannot be checked from anywhere but the resolved dependency.
 
-Previously assumed, now **confirmed** from the CrossPoint firmware source and recorded in
-section 12.3: HTTPS against GitHub Pages, and an acquisition feed as the catalog root.
-Reading that source also corrected two things this spec originally had wrong — the SD
-card filename comes from the entry's author and title rather than the URL, and the
-catalog cannot exceed 62 entries.
+Everything else has been checked. Confirmed from the CrossPoint firmware source and
+recorded in section 12.3: HTTPS against GitHub Pages, and an acquisition feed as the
+catalog root — plus two corrections, that the SD card filename comes from the entry's
+author and title rather than the URL, and that a feed cannot exceed 62 entries.
+Confirmed by smoke test at the resolved versions: trafilatura 2.2.0's seven keyword
+arguments, nh3 0.3.7's `clean()` signature and its `rel` injection, EbookLib 0.20's
+`mimetype`-first-and-stored zip layout, and that EbookLib emits `nav.xhtml` and
+`toc.ncx` only when explicitly asked.
+
+What remains genuinely unknown is the hardware itself: whether a real X4 renders these
+EPUBs well, and how the *stock* firmware's OPDS client behaves. Settle both the first
+time you sideload an issue, before trusting the pipeline.
