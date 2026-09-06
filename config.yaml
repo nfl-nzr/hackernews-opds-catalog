@@ -29,7 +29,14 @@ fetch:
   retries: 2
   retry_backoff_seconds: 2
   max_bytes: 5000000     # abort a download past 5 MB
-  user_agent: "xtpages/1.0 (+https://github.com/OWNER/REPO)"
+  # Bot walls (Cloudflare and friends) block on the TLS handshake fingerprint,
+  # before any header is sent — a custom User-Agent cannot get past them, and a
+  # fake one changes nothing. Set impersonate to a curl_cffi browser target to
+  # present a browser TLS fingerprint instead; this is what recovers the ~5 of 20
+  # articles that otherwise return 403. Set it to "" to use the honest client
+  # below and accept the losses. See SPEC.md section 6.4.
+  impersonate: "chrome"
+  user_agent: "xtpages/1.0 (+https://github.com/nfl-nzr/hackernews-opds-catalog)"
 
 # ─── Site identity ──────────────────────────────────────────────────────────
 site:

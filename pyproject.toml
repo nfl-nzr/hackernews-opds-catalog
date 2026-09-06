@@ -5,6 +5,7 @@ description = "Daily Hacker News digests as EPUB, published behind an OPDS catal
 requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.28",
+    "curl-cffi>=0.7",   # browser TLS fingerprint; see SPEC 6.4
     "trafilatura>=2.2",
     "ebooklib>=0.20",
     "nh3>=0.2",

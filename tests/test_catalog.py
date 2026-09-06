@@ -155,3 +155,12 @@ def test_now_is_used_when_no_manifests(cfg):
     feed = parse(catalog.build_catalog(cfg, []))
     stamp = feed.find(f"{ATOM}updated").text
     assert stamp.endswith("Z") and datetime.now(UTC).strftime("%Y") in stamp
+
+
+def test_robots_txt_disallows_everything(cfg, tmp_path):
+    catalog.write_all(cfg, [manifest()], tmp_path)
+    assert (tmp_path / "robots.txt").read_text() == "User-agent: *\nDisallow: /\n"
+
+
+def test_index_is_noindex(cfg):
+    assert 'content="noindex, nofollow"' in catalog.build_index(cfg, [])

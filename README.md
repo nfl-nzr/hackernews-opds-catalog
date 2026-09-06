@@ -145,21 +145,31 @@ run-on paragraph. The build detects those blocks and re-emits them line by line,
 non-breaking spaces to hold the indentation. You get line structure and indentation, but
 not a monospace font — the device picks the typeface.
 
-**Some articles will not extract.** Paywalls, JavaScript-only sites, and bot blocking all
-defeat text extraction. In practice **12-17 of 20 stories come through with full text**;
-the rest are almost always an outright HTTP 403 from sites that refuse non-browser
-clients. Those stories still appear in the issue as a titled chapter with a link, never
-silently dropped, so you can open them later on a phone.
+**Most articles extract; a few never will.** A typical issue lands **19 of 20** with full
+text. What still fails is JavaScript-rendered pages with no server-side content — a
+Mastodon post, say — where there is simply nothing in the HTML to extract. Those stories
+still appear as a titled chapter with a link, never silently dropped, so you can open
+them later on a phone.
 
-Getting past those 403s would mean sending a fake browser User-Agent, which this project
-deliberately does not do — see the fetching note below.
+**Bot walls block on TLS, not on your User-Agent.** Cloudflare and similar services
+fingerprint the TLS handshake and reject a Python HTTP client before it sends a single
+header, so no User-Agent — honest or fake — gets past them. The build therefore fetches
+with [curl_cffi](https://github.com/lexiforest/curl_cffi), which presents a real browser's
+TLS fingerprint. That is the difference between 12 of 20 articles and 19 of 20. Set
+`fetch.impersonate: ""` in `config.yaml` to turn it off and use a plain, self-identifying
+client instead, accepting the losses.
 
-**This fetches other people's pages on a schedule.** The build sends a User-Agent that
-identifies the project and links back to the repository, holds itself to five concurrent
-requests overall and one per article host, and stops on `429`/`503` rather than retrying
-through it. (Hacker News' own JSON API is exempt from the per-host limit — it is a public
-API with no published rate limit, and it is the only way to read the feed.) If you fork
-this, leave those limits alone.
+**This fetches other people's pages on a schedule.** Forty requests a day, five
+concurrent at most and one at a time per host, stopping on `429`/`503` rather than
+retrying through it, and never following a link out of an article. (Hacker News' own JSON
+API is exempt from the per-host limit — it is a public API with no published rate limit,
+and it is the only way to read the feed.) If you fork this, leave those limits alone:
+they are what keeps a personal reading tool from behaving like a crawler.
+
+**The published site carries other people's article text.** It is served with
+`robots.txt: Disallow: /` and a `noindex` meta tag so it stays out of search results —
+a personal reading setup rather than a republication of the work. Keep it that way: do
+not submit the site to search engines or link it somewhere it will be crawled.
 
 **A download that fails may be a memory problem, not a network one.** The reader needs
 40 KB of free heap to open a TLS connection, and refuses the transfer below that with a

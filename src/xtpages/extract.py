@@ -7,6 +7,7 @@ a dropped story.
 from __future__ import annotations
 
 import threading
+import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
@@ -61,6 +62,45 @@ def _shape(cfg: Config, html: str, base_url: str | None) -> str:
     return truncate(shaped, cfg.content.max_article_chars)
 
 
+def _get_impersonated(cfg: Config, url: str) -> tuple[str, str] | str:
+    """Fetch with a browser TLS fingerprint. See SPEC.md section 6.4.
+
+    Bot walls fingerprint the TLS ClientHello, so they reject a Python client
+    before it sends a single header. curl_cffi presents a real browser's
+    handshake, which is the only thing that gets these pages at all.
+    """
+    from curl_cffi import requests as curl_requests
+
+    last = "unknown error"
+    for attempt in range(cfg.fetch.retries + 1):
+        try:
+            response = curl_requests.get(
+                url,
+                impersonate=cfg.fetch.impersonate,
+                timeout=cfg.fetch.timeout_seconds,
+                allow_redirects=True,
+                max_redirects=MAX_REDIRECTS,
+            )
+            status = response.status_code
+            if status >= 400:
+                if status < 500 or status == 503:
+                    return f"HTTP {status}"
+                last = f"HTTP {status}"
+                raise RuntimeError(last)
+            ctype = response.headers.get("content-type", "").split(";")[0].strip()
+            if ctype and ctype not in HTML_TYPES:
+                return f"non-html content-type: {ctype}"
+            body = response.content
+            if len(body) > cfg.fetch.max_bytes:
+                return f"body exceeded {cfg.fetch.max_bytes} bytes"
+            return response.text, str(response.url)
+        except Exception as exc:  # noqa: BLE001 - curl_cffi raises its own hierarchy
+            last = f"{type(exc).__name__}: {exc}"
+            if attempt < cfg.fetch.retries:
+                time.sleep(cfg.fetch.retry_backoff_seconds * (attempt + 1))
+    return last
+
+
 def _get(cfg: Config, url: str, client: httpx.Client) -> tuple[str, str] | str:
     """Return (html, final_url), or an error string."""
     last = "unknown error"
@@ -90,8 +130,6 @@ def _get(cfg: Config, url: str, client: httpx.Client) -> tuple[str, str] | str:
         except (httpx.TimeoutException, httpx.TransportError, httpx.HTTPError) as exc:
             last = f"{type(exc).__name__}: {exc}"
             if attempt < cfg.fetch.retries:
-                import time
-
                 time.sleep(cfg.fetch.retry_backoff_seconds * (attempt + 1))
     return last
 
@@ -114,13 +152,17 @@ def fetch_article(cfg: Config, story: Story, client: httpx.Client | None = None)
     if scheme not in ("http", "https"):
         return Article(story=story, status=Status.FETCH_ERROR, error=f"scheme {scheme!r}")
 
-    owned = client is None
-    client = client or _client(cfg)
-    try:
-        result = _get(cfg, story.url, client)
-    finally:
-        if owned:
-            client.close()
+    # An explicit client (tests) always uses the httpx path.
+    if client is None and cfg.fetch.impersonate:
+        result = _get_impersonated(cfg, story.url)
+    else:
+        owned = client is None
+        client = client or _client(cfg)
+        try:
+            result = _get(cfg, story.url, client)
+        finally:
+            if owned:
+                client.close()
 
     if isinstance(result, str):
         status = Status.NON_HTML if "non-html" in result else Status.FETCH_ERROR
@@ -156,14 +198,10 @@ def fetch_articles(cfg: Config, stories: list[Story]) -> list[Article]:
 
     def one(story: Story) -> Article:
         host = (urlparse(story.url or "").hostname or "").lower()
-        client = _client(cfg)
-        try:
-            if host:
-                with _host_locks[host]:
-                    return fetch_article(cfg, story, client)
-            return fetch_article(cfg, story, client)
-        finally:
-            client.close()
+        if host:
+            with _host_locks[host]:
+                return fetch_article(cfg, story)
+        return fetch_article(cfg, story)
 
     with ThreadPoolExecutor(max_workers=cfg.fetch.max_concurrency) as pool:
         return list(pool.map(one, stories))

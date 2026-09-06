@@ -54,7 +54,8 @@ class Fetch:
     retries: int = 2
     retry_backoff_seconds: float = 2
     max_bytes: int = 5_000_000
-    user_agent: str = "xtpages/1.0 (+https://github.com/OWNER/REPO)"
+    impersonate: str = "chrome"
+    user_agent: str = "xtpages/1.0 (+https://github.com/nfl-nzr/hackernews-opds-catalog)"
 
 
 @dataclass
@@ -175,6 +176,11 @@ def validate(cfg: Config) -> None:
         raise ConfigError(f"dedupe.lookback_issues: {d.lookback_issues} is negative")
     if cfg.retention_days < 1:
         raise ConfigError(f"retention_days: {cfg.retention_days} is below 1")
+    if f.impersonate and not re.match(r"^[a-z0-9._]+$", f.impersonate):
+        raise ConfigError(
+            f"fetch.impersonate: {f.impersonate!r} is not a curl_cffi target "
+            "(e.g. 'chrome', 'safari', or '' to disable)"
+        )
     if not 1 <= f.max_concurrency <= 10:
         raise ConfigError(f"fetch.max_concurrency: {f.max_concurrency} is not in 1..10")
     if not cfg.slots:

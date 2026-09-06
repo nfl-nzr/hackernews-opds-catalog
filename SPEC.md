@@ -271,7 +271,7 @@ fetch:
   retries: 2
   retry_backoff_seconds: 2
   max_bytes: 5000000     # abort a download past 5 MB
-  user_agent: "xtpages/1.0 (+https://github.com/OWNER/REPO)"
+  user_agent: "xtpages/1.0 (+https://github.com/nfl-nzr/hackernews-opds-catalog)"
 
 # ─── Site identity ──────────────────────────────────────────────────────────
 site:
@@ -348,11 +348,23 @@ used by the publish step.
 
 ### 6.4 Fetch conduct
 
-The owner has chosen not to consult `robots.txt`. That decision stands, and it makes the
-following non-negotiable, because they are what keeps this from being abusive:
+The owner has chosen not to consult `robots.txt`, and to present a browser TLS
+fingerprint so that bot-walled articles can be read. Those decisions stand. What follows
+is what keeps the result proportionate.
 
-- The User-Agent **must** identify the project and carry a URL a site owner can visit to
-  see what is hitting them. Never impersonate a browser.
+**On the browser fingerprint.** Bot walls (Cloudflare and similar) reject a client at the
+TLS handshake, on the shape of its ClientHello, *before it sends a single header*. This
+was measured: five blocked articles returned 403 to httpx under the project User-Agent,
+under a Chrome User-Agent, and under every header combination tried — while plain `curl`,
+with a different TLS stack, got one of them at 200. A custom User-Agent cannot change
+this and a fake one buys nothing. `curl_cffi` with `impersonate` presents a real browser
+handshake, which took a live issue from 12 of 20 articles to 19 of 20.
+
+Set `fetch.impersonate` to `""` to disable it and fall back to the honest httpx client
+under `fetch.user_agent`, accepting the losses. The `user_agent` string still identifies
+the project on that path, and should never be made to look like a browser: a fake
+User-Agent over a Python TLS stack is transparently a bot to anything that checks, and
+merely dishonest to anything that does not.
 - `max_concurrency` is a global ceiling of 5 across the whole run, and additionally
   **never more than one in-flight request per host** — with one exemption: the Hacker
   News API host (`hacker-news.firebaseio.com`). It is a public JSON API with no
@@ -879,7 +891,7 @@ crashing the build on files written by an older version still inside the 14-day 
   <updated>2026-09-06T03:07:41Z</updated>
   <author>
     <name>xtpages</name>
-    <uri>https://github.com/OWNER/REPO</uri>
+    <uri>https://github.com/nfl-nzr/hackernews-opds-catalog</uri>
   </author>
   <link rel="self"
         href="https://owner.github.io/REPO/catalog.xml"

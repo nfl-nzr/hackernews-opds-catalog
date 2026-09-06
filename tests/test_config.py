@@ -112,3 +112,15 @@ def test_explicit_base_url_gets_trailing_slash():
     config = Config()
     config.site.base_url = "https://example.com/sub"
     assert config.base_url == "https://example.com/sub/"
+
+
+def test_impersonate_accepts_a_target_or_blank(cfg):
+    cfg.fetch.impersonate = "chrome"
+    ok(cfg)
+    cfg.fetch.impersonate = ""
+    ok(cfg)
+
+
+def test_impersonate_rejects_junk(cfg):
+    cfg.fetch.impersonate = "Chrome/141 (fake)"
+    fails_with(cfg, "fetch.impersonate")

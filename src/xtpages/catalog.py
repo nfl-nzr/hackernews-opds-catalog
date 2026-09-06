@@ -171,6 +171,7 @@ th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid #e5e5
 <html lang="{escape(cfg.site.language)}">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>{escape(cfg.site.title)}</title>
 <style>{css}</style>
 <h1>{escape(cfg.site.title)}</h1>
@@ -192,5 +193,9 @@ def write_all(cfg: Config, manifests: list[Manifest], public_dir: Path) -> None:
     write_atomic(public_dir / "catalog.xml", build_catalog(cfg, manifests))
     write_atomic(public_dir / "nav.xml", build_nav(cfg, manifests))
     write_atomic(public_dir / "index.html", build_index(cfg, manifests))
+    # Keep the issues out of search indexes. The EPUBs carry other people's
+    # article text; not being crawlable is the difference between a personal
+    # reading setup and a republication of it.
+    write_atomic(public_dir / "robots.txt", "User-agent: *\nDisallow: /\n")
     # build owns .nojekyll; the workflow's touch is redundant insurance (SPEC 9).
     write_atomic(public_dir / ".nojekyll", "")
