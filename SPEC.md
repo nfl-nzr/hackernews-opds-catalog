@@ -486,8 +486,9 @@ Fetch procedure per article:
    `extraction_failed`. That floor is what catches paywall stubs and cookie walls, which
    do return markup.
 8. Absolutize any remaining relative `href` against the final response URL, then
-   sanitize (section 8.3), then truncate to `content.max_article_chars` at a tag
-   boundary.
+   **unwrap `<pre>` blocks (section 8.3.1)**, then sanitize (section 8.3), then truncate
+   to `content.max_article_chars` at a tag boundary. That order matters: the unwrap needs
+   the original `<pre>` element, which the sanitizer would otherwise have flattened.
 
 Self-posts skip fetching entirely: `story.text` is HN-supplied HTML, so sanitize it and
 set `self_post`.
@@ -542,30 +543,81 @@ Never omit a story because extraction failed. A 20-item issue always has 20 chap
 the user decides whether a link is worth opening later.
 
 **Sanitizing** — `html.py` exposes `sanitize(html: str) -> str` using `nh3`, allowing
-only: `p h1 h2 h3 h4 h5 h6 ul ol li blockquote pre code em strong b i a br hr table
-thead tbody tr th td figure figcaption sub sup small` plus `img` when
-`content.include_images` is true. Allowed attributes: `href` on `a`, `src`/`alt` on
-`img`. Everything else — `script`, `style`, `iframe`, `form`, `svg`, `video`, `audio`,
-inline event handlers, and all `class`/`id`/`style` attributes — is stripped. This is not
-paranoia about hostile content; constrained e-ink renderers stall or mis-paint on markup
-they do not expect.
+only: `p h1 h2 h3 h4 h5 h6 ul ol li blockquote em strong b i u del s a br hr table tr th
+td sub sup` plus `img` when `content.include_images` is true. Allowed attributes: `href`
+on `a`, `src`/`alt` on `img`. Everything else — `script`, `style`, `iframe`, `form`,
+`svg`, `video`, `audio`, inline event handlers, and all `class`/`id`/`style` attributes —
+is stripped.
+
+That list is not a guess at what a constrained renderer might tolerate. It is the set the
+device actually recognizes, read from `ChapterHtmlSlimParser.cpp` and recorded in section
+12.3. Tags outside it are not errors — the parser ignores the element and keeps its text
+— so `code`, `small`, `figure`, `figcaption`, `thead`, and `tbody` are harmless but
+accomplish nothing, which is why they are not on the list. `ul` and `ol` are kept even
+though the device ignores the containers themselves, because `li` renders its own bullet.
+
+The sanitizer strips `class` from *article* HTML. The `class` values on the meta and
+notice paragraphs are added by our own chapter template afterwards, never inherited from
+a source page.
 
 **Stylesheet** — one small `style.css`, sizes in `em` only, never `px`, because the
 device controls font size and a fixed pixel size fights it:
 
 ```css
 body { margin: 0; padding: 0; }
-h1 { font-size: 1.3em; margin: 0 0 0.3em; }
+h1 { margin: 0 0 0.3em; }
 p { margin: 0 0 0.7em; text-indent: 0; }
-p.meta { font-size: 0.85em; margin-bottom: 0.5em; }
+p.meta { margin-bottom: 0.5em; font-style: italic; }
 p.notice { font-style: italic; }
-pre { white-space: pre-wrap; word-wrap: break-word; font-size: 0.85em; }
+p.code { margin: 0; text-indent: 0; }
 blockquote { margin: 0 0 0.7em 1em; }
-img { max-width: 100%; }
 ```
 
-`pre { white-space: pre-wrap }` matters: HN links to a lot of code, and a 4-inch screen
-cannot scroll horizontally out of a wide `<pre>`.
+Every declaration above is one the device's CSS parser implements. It supports exactly
+`direction`, `display` (only `none` and `block`), `font-style`, `font-weight`, `height`,
+`margin`/`margin-*`, `padding`/`padding-*`, `text-align`, `text-decoration-line`,
+`text-indent`, `vertical-align`, and `width` — and among selectors, only element,
+`.class`, `element.class`, and grouped forms. **`font-size`, `line-height`, `max-width`,
+`color`, and `font-family` are not implemented and are silently ignored**, which is why
+no rule here sets a size. Headings still look like headings: the renderer styles `h1`-`h6`
+itself, without needing CSS.
+
+Two rules follow from this. Do not write a stylesheet declaration the device drops on the
+floor — it creates the illusion of control. And do not let CSS carry meaning, because
+**honouring embedded stylesheets is a user-toggleable setting**: the EPUB must read
+correctly with the stylesheet ignored entirely.
+
+### 8.3.1 Unwrapping `<pre>` — required, not optional
+
+The device has **no support for `<pre>` whatsoever.** The tag appears nowhere in its EPUB
+library, it is absent from the parser's block-tag list, and there is no `white-space` CSS
+property to fall back on. Text runs through `trimAndNormalize()`, which collapses every
+run of space, tab, carriage return, and newline into a single space.
+
+The consequence for a Hacker News reader specifically: a code block arrives as one
+run-on paragraph with every line break and every level of indentation destroyed. HN links
+to a great deal of code, so left alone this would quietly wreck a meaningful share of
+every issue.
+
+`html.py` must therefore expose `unwrap_pre(html: str) -> str`, applied before
+sanitizing. For each `<pre>` element:
+
+1. Take its full text content, including any nested `<code>`.
+2. Expand tabs to four spaces, then split on `\n`.
+3. For each line, convert the **leading** run of spaces to U+00A0 NO-BREAK SPACE, one for
+   one, leaving interior spaces alone.
+4. Emit each line as `<p class="code">…</p>`, XML-escaped. Represent a blank line as a
+   single U+00A0 so it survives as a blank line rather than collapsing away.
+5. Replace the original `<pre>` with that run of paragraphs.
+
+The U+00A0 substitution is what makes indentation survive, and it works because the
+firmware's whitespace test is a byte-level ASCII check — `' '`, `'\r'`, `'\n'`, `'\t'`
+— while U+00A0 encodes as the two bytes `0xC2 0xA0`, neither of which matches. It is
+therefore invisible to whitespace collapsing and reaches the page intact.
+
+This does not give you a monospace font — the device chooses the face, and the user can
+change it — so columns will not align. Line structure and indentation are preserved,
+which is the difference between readable code and a wall of words.
 
 ### 8.4 `catalog.py` — OPDS and landing page
 
@@ -1014,6 +1066,21 @@ Read from `crosspoint-reader` at the versions cited. Re-verify if the firmware m
 | **HTTP timeout** | 60 s per request | `HttpDownloader.cpp` |
 | **Pagination** | A feed-level `rel="next"` link is honoured, if a fork ever exceeds 62 entries | `OpdsParser.cpp` |
 | **Basic auth** | Sent preemptively when both username and password are set. We use neither | `HttpDownloader.cpp` |
+| **OPDS server URL length** | A `std::string`, no fixed cap. Max 8 saved servers | `src/OpdsServerStore.h` |
+
+Constraints on the EPUB itself, which decide what the chapters may contain:
+
+| Constraint | Finding | Source |
+|---|---|---|
+| **Recognized tags** | Blocks `p li div br blockquote`; headings `h1`-`h6`; bold `b strong`; italic `i em`; underline `u ins`; strikethrough `del s strike`; also `a span sub sup ruby rt table tr th td img hr`. Unrecognized tags are ignored but their text is kept | `lib/Epub/Epub/parsers/ChapterHtmlSlimParser.cpp` |
+| **`<pre>` — unsupported** | Absent from the entire EPUB library. Whitespace is collapsed by `trimAndNormalize()` (space, `\t`, `\r`, `\n` → one space), so a code block becomes one run-on paragraph. Section 8.3.1 is the mandatory workaround | `ChapterHtmlSlimParser.cpp` |
+| **CSS properties** | Only `direction`, `display` (`none`/`block`), `font-style`, `font-weight`, `height`, `margin*`, `padding*`, `text-align`, `text-decoration-line`, `text-indent`, `vertical-align`, `width`. **No `font-size`, `line-height`, `max-width`, `color`, or `font-family`** | `lib/Epub/Epub/css/CssParser.cpp` |
+| **CSS selectors** | Element, `.class`, `element.class`, and grouped. **No descendant, child, or pseudo-selectors** | `lib/Epub/Epub/css/CssParser.h` |
+| **CSS is optional** | Honouring embedded stylesheets is a user setting (`embeddedStyle` cache key). The book must read correctly with it off | `docs/file-formats.md` |
+| **Lists** | `<li>` emits its own bullet and handles nesting; `<ul>`/`<ol>` containers are ignored | `ChapterHtmlSlimParser.cpp` |
+| **Tables** | Real support — simple rows laid out as positioned columns, with a minimum cell width of 3 line-heights. Wide tables will still be cramped on a 4-inch screen | `ChapterHtmlSlimParser.cpp` |
+| **Table of contents** | EPUB 3 `nav.xhtml` is preferred, `toc.ncx` is the fallback, and a book with neither still opens. Shipping both, as `ebooklib` does, is correct | `lib/Epub/Epub.cpp` |
+| **Anchor cap** | 1024 IDs per chapter, beyond which anchors are dropped. We generate no IDs; do not start | `ChapterHtmlSlimParser.cpp` |
 
 **One real failure mode this surfaced.** Starting a download requires **40 KB free heap
 and a 20 KB largest-free-block** (`MIN_TLS_FREE_HEAP`, `MIN_TLS_MAX_ALLOC`). Below that
@@ -1067,8 +1134,8 @@ and lies about why.
 |---|---|
 | `test_config.py` | Each validation rule in 6.1 raises with the offending key named, including the 62-entry catalog cap; `base_url` derivation from `GITHUB_REPOSITORY`, including the lowercased owner and the localhost fallback |
 | `test_hn.py` | Deleted/dead/non-story items dropped; self-posts detected from a missing `url`; `min_score` filter; input ID order preserved through concurrent fetch |
-| `test_extract.py` | `article_clean.html` extracts to `ok`; `article_messy.html` extracts body without nav or sidebar text; `article_paywall.html` yields `extraction_failed` via the 500-character floor; non-HTML content-type yields `non_html`; relative links absolutized; sanitizer strips `<script>`, `<style>`, `class`, and `onclick` |
-| `test_epub.py` | Output opens with `ebooklib.epub.read_epub`; chapter count equals story count plus title page; metadata identifier/title/language correct; failed articles produce a notice chapter, never a missing one; **the zip's first entry is `mimetype`, stored uncompressed** — an EPUB that violates this opens on a laptop and fails on hardware |
+| `test_extract.py` | `article_clean.html` extracts to `ok`; `article_messy.html` extracts body without nav or sidebar text; `article_paywall.html` yields `extraction_failed` via the 500-character floor; non-HTML content-type yields `non_html`; relative links absolutized; sanitizer strips `<script>`, `<style>`, `class`, and `onclick`; **`unwrap_pre` turns a multi-line indented `<pre>` into one `<p class="code">` per line, converts leading spaces to U+00A0 while leaving interior spaces as ASCII, preserves blank lines, expands tabs to four spaces, and leaves a document with no `<pre>` unchanged**; and no `<pre>` survives sanitizing |
+| `test_epub.py` | Output opens with `ebooklib.epub.read_epub`; chapter count equals story count plus title page; metadata identifier/title/language correct; failed articles produce a notice chapter, never a missing one; **the zip's first entry is `mimetype`, stored uncompressed** — an EPUB that violates this opens on a laptop and fails on hardware; both `toc.ncx` and `nav.xhtml` are present; and the stylesheet declares no property outside the supported set in 12.3 |
 | `test_catalog.py` | Feed parses; required elements from 10.2 present; entries newest-first; all hrefs absolute; a title containing `&` and `<` round-trips; a control character is stripped; summary truncated at 400 chars; **entry titles are pure ASCII and contain no colon**, and every field is inside the device limits in 12.3 (title 160 bytes, author 120, id 128, href 768) |
 | `test_publish.py` | Slot resolution by `--slot`, by `--cron`, and by nearest-time; the day-boundary case where a 21:00 run happens at 00:40 the next day; deduplication excludes the previous issue but **not** the issue being rebuilt; backfill reaches `story_count`; pruning drops exactly the issues past `retention_days` and never touches `catalog.xml`, `nav.xml`, `index.html`, `latest.epub`, or `.nojekyll` |
 | `test_schedule_sync.py` | Cron list in `build.yml` equals `schedule.slots[].cron` in `config.yaml` |

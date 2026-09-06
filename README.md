@@ -137,6 +137,12 @@ whether an extraction change improved things.
 
 ## Things worth knowing
 
+**Code blocks are rebuilt, not passed through.** The reader has no support for `<pre>`
+and collapses all whitespace, which would turn every code sample on Hacker News into one
+run-on paragraph. The build detects those blocks and re-emits them line by line, using
+non-breaking spaces to hold the indentation. You get line structure and indentation, but
+not a monospace font — the device picks the typeface.
+
 **Some articles will not extract.** Paywalls, JavaScript-only sites, and Cloudflare
 challenges all defeat text extraction, and GitHub Actions' IP ranges are blocked by more
 sites than a home connection is. Those stories still appear in the issue as a titled
