@@ -140,7 +140,8 @@ Create exactly this structure.
 │       └── html.py             # sanitizing + URL absolutizing helpers
 ├── tests/
 │   ├── conftest.py
-│   ├── fixtures/
+│   ├── fixtures/               # hand-written, not scraped: keep them small and
+│   │   │                        # committed, and never fetch at test time
 │   │   ├── hn_topstories.json
 │   │   ├── hn_item_story.json
 │   │   ├── hn_item_selfpost.json
@@ -275,7 +276,9 @@ fetch:
 # ─── Site identity ──────────────────────────────────────────────────────────
 site:
   base_url: ""           # blank → derived from $GITHUB_REPOSITORY at build time
-  title: "Hacker News Daily"
+  title: "Hacker News Daily"    # catalog + landing page name
+  title_short: "HN Daily"       # leads each issue title, so it becomes part of the
+                                # SD card filename: ASCII, no colon (section 10.2)
   author: "Hacker News"
   language: "en"
 
@@ -304,6 +307,9 @@ key on any of these:
 - `retention_days` < 1
 - `fetch.max_concurrency` not in `1..10`
 - `schedule.slots` empty, or any `label` not matching `^[0-9]{4}$`, or duplicate labels
+- `site.title_short` empty, longer than 40 characters, non-ASCII, or containing any of
+  `/ \ : * ? " < > |` — it is composed into the entry title and therefore into the
+  downloaded filename (sections 10.2 and 12.3), where those characters become `_`.
 - `site.base_url` non-blank and not starting with `https://`, **except** that
   `http://localhost[:port]`, `http://127.0.0.1[:port]`, and `http://` on a private-LAN
   address (10/8, 172.16/12, 192.168/16) are all permitted. Local testing (section 14.4)
