@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>urn:xtpages:nav</id>
+  <title>Hacker News Daily</title>
+  <updated>2026-09-12T07:42:03Z</updated>
+  <author>
+    <name>xtpages</name>
+  </author>
+  <link rel="self" href="https://nfl-nzr.github.io/hackernews-opds-catalog/nav.xml" type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <link rel="start" href="https://nfl-nzr.github.io/hackernews-opds-catalog/nav.xml" type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <entry>
+    <id>urn:xtpages:nav:issues</id>
+    <title>Recent issues</title>
+    <updated>2026-09-12T07:42:03Z</updated>
+    <content type="text">The last 12 issues</content>
+    <link rel="subsection" href="https://nfl-nzr.github.io/hackernews-opds-catalog/catalog.xml" type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+  </entry>
+</feed>
