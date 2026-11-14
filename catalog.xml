@@ -1,0 +1,348 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/terms/">
+  <id>urn:xtpages:catalog</id>
+  <title>Hacker News Daily</title>
+  <updated>2026-11-14T09:50:17Z</updated>
+  <author>
+    <name>xtpages</name>
+    <uri>https://github.com/nfl-nzr/hackernews-opds-catalog</uri>
+  </author>
+  <link rel="self" href="https://nfl-nzr.github.io/hackernews-opds-catalog/catalog.xml" type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+  <link rel="start" href="https://nfl-nzr.github.io/hackernews-opds-catalog/catalog.xml" type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+  <entry>
+    <id>urn:xtpages:issue:20261114-0300</id>
+    <title>HN Daily 2026-11-14 0300 UTC</title>
+    <updated>2026-11-14T09:50:17Z</updated>
+    <dc:issued>2026-11-14T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Why get an expensive Pi when I have an old phone? · Ggml v1.0.0 · Nvidia allegedly engineered scarcity by funding AI startups to buy its GPUs · Monkey Island: all 13 versions side by side · Unsloth Qwen3.8-27B Quantizations – Dynamic v3.1 Update · Show HN: Live map of U.S. flights during tonight's FAA nationwide ground stop · Jonathan Blow – If AI solved coding, why is my software st…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261114-0300.epub" type="application/epub+zip" length="99629"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261113-2100</id>
+    <title>HN Daily 2026-11-13 2100 UTC</title>
+    <updated>2026-11-14T01:13:37Z</updated>
+    <dc:issued>2026-11-13T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · FAA issues national ground stop · Amtrak booking system experiencing major issues amid nationwide FAA ground stop · Live airband on all frequencies from KORS. Victoria, CA also ground stopped · What Happened to 3Com? · Terminal borders that don't cost a cell · FM-1 Workbench · Found: A protein that drives ageing without unleashing inflammation · Reverse engineering my Coway air purif…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261113-2100.epub" type="application/epub+zip" length="87269"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261113-0300</id>
+    <title>HN Daily 2026-11-13 0300 UTC</title>
+    <updated>2026-11-13T10:34:23Z</updated>
+    <dc:issued>2026-11-13T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Elevated errors on claude.ai, Claude Code, and platform.claude.com · IceWM · Claude Is Down · The Dawn of the Data Intelligence Engineer · Brave Search API now accepts agentic payments via the x402 protocol · Former Nvidia CEO Huang had a relationship with a second employee, sources say · Switcher (2004) · Microsoft Outlook/365 still down after 12 hours · Global Microsoft Outage · Nv…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261113-0300.epub" type="application/epub+zip" length="96842"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261112-2100</id>
+    <title>HN Daily 2026-11-12 2100 UTC</title>
+    <updated>2026-11-13T01:38:08Z</updated>
+    <dc:issued>2026-11-12T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Jensen Huang resigns · Rust 1.100 · Gemini 4 Hydrogen and Orchestrator · Show HN: My $300 embroidery machine needed a subscription, so I built my own app · Dwarf planet candidate appears which takes roughly 280 years to orbit our sun · Foundation Models framework · AI is turning Apple's app review process into a nightmare for synth developers · Service degradation on Microsoft 365 ·…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261112-2100.epub" type="application/epub+zip" length="136845"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261112-0300</id>
+    <title>HN Daily 2026-11-12 0300 UTC</title>
+    <updated>2026-11-12T10:40:28Z</updated>
+    <dc:issued>2026-11-12T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Jane Street: Socratic Tutor · A live tree of systemd jobs on the boot console · Critical RCE Vulnerability in Apache HTTP Server · Legocam: My Lego webcam from 2000, working on a modern Mac · I'm Working on a FOSS Linux Pinbal Simulation Engine · I gave an agent a lakehouse and control of my garden · Darling Development Update – Q4 2026 · Grote Reber and the 'Square Kilometre Array'…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261112-0300.epub" type="application/epub+zip" length="78279"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261111-2100</id>
+    <title>HN Daily 2026-11-11 2100 UTC</title>
+    <updated>2026-11-12T02:05:49Z</updated>
+    <dc:issued>2026-11-11T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · 93% of Paint Splatters Are Valid Perl Programs (2019) · AWS emulator · Tim Peters has died · United Airlines bans AI agents from booking flights on behalf of travelers · Lock Your GitHub Actions · A false smoke alarm almost drowned Jane Street's only NYC datacenter · Gemini Decisions API · Emacs in the Age of Magic · A general purpose Apple Silicon layer for x86-64 PCs · Show HN: I r…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261111-2100.epub" type="application/epub+zip" length="58958"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261111-0300</id>
+    <title>HN Daily 2026-11-11 0300 UTC</title>
+    <updated>2026-11-11T10:22:57Z</updated>
+    <dc:issued>2026-11-11T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Protecting SSH Keys with macOS Secure Enclave · Greg Kurtzer's Ginux is now a userspace kernel · A great old-timey game-programming hack (2013) · Apple has new Mac app coming to make running local AI models easy · To deter bioterrorism, U.S. imposes new rules on ordering synthetic DNA · Why I wrote the BEAM book (2025) · A Compendium of Abandoned Greenhouses · Why Amstrad chose the 3…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261111-0300.epub" type="application/epub+zip" length="96357"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261110-2100</id>
+    <title>HN Daily 2026-11-10 2100 UTC</title>
+    <updated>2026-11-11T00:59:13Z</updated>
+    <dc:issued>2026-11-10T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · After 7 months, Glasswing overwelms maintainers with underwhelming findings · Scion is back and is going to sell a kei truck in America · .name Grandfathered · Smart home devices should work without the internet · Six Math Essentials by Terence Tao · Synaptics patent claims stop work on DisplayLink drivers · Starlink Mini 2 · Val Town is winding down · Pinot Noir: inside the criminal…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261110-2100.epub" type="application/epub+zip" length="87192"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261110-0300</id>
+    <title>HN Daily 2026-11-10 0300 UTC</title>
+    <updated>2026-11-10T10:47:28Z</updated>
+    <dc:issued>2026-11-10T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Amazon saves millions by replacing Sonnet 4.6 with Strands Decider · Queens Public library under ransomware attack e-borrowing suspended · Your TV can see through walls · How hard is it to check for whitespace? · Fireworks AI security breach impacts Notion and their customers · Ultorg: The User Interface for Relational Databases · ClickHouse Acquires Xata · Billion Watts in the Speak…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261110-0300.epub" type="application/epub+zip" length="70630"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261109-2100</id>
+    <title>HN Daily 2026-11-09 2100 UTC</title>
+    <updated>2026-11-10T03:07:27Z</updated>
+    <dc:issued>2026-11-09T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Claude Fable 5.2 and Mythos 5.2 · USPS now offers official ZIP Code boundary polygons · Fable 5.2 one-shotted my nephew's dream game · E-means: Outperforming k-means in one-tenth the epochs · Payments Canada announces launch of Canada's Real-Time Rail (RTR) payment system · Horible public key tricks · Foldable Flight: The Best Paper Airplanes · Locating the source of a mysterious bee…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261109-2100.epub" type="application/epub+zip" length="113911"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261109-0300</id>
+    <title>HN Daily 2026-11-09 0300 UTC</title>
+    <updated>2026-11-09T10:56:09Z</updated>
+    <dc:issued>2026-11-09T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Fun things to do with your VM/370 CE machine – Fun with big computers · Next-Concept Modeling: Fast, Parallel Coarse-to-Fine Text Generation · Unlocking any car from X brand in most of the world · I'm not convinced the AI bubble exists · Is Opus 5.5 nerfed? Thinking patterns changed on November 3 · Psalm 7 release: PHP security&amp;static analysis software · The French Cake Cooked on a S…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261109-0300.epub" type="application/epub+zip" length="102298"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261108-2100</id>
+    <title>HN Daily 2026-11-08 2100 UTC</title>
+    <updated>2026-11-09T00:27:37Z</updated>
+    <dc:issued>2026-11-08T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · KetchUp – Open-source SketchUp alternative built with Rust and WebGPU · Chimera Vocal Synth · Herb Sutter: When a language's creator and its owners strongly disagree [pdf] · Ask HN: What are you working on? (November 2026) · Dux: Free, open-source Wayland desktop shell with file manager and theming · Declarative Dragging · Outlook.com Is Quietly Rejecting Email from Domains Without D…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261108-2100.epub" type="application/epub+zip" length="88774"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261108-0300</id>
+    <title>HN Daily 2026-11-08 0300 UTC</title>
+    <updated>2026-11-08T09:53:31Z</updated>
+    <dc:issued>2026-11-08T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Goodbye Claude, Hello Pi · Agent memory needs its OpenTelemetry moment · Clj.rs – a Clojure dialect implemented in Rust · Kirlian Photography: Building Your Own Equipment · Finding Xanadu: Inside a JRPG classic translation 15 years in the making · Consumer brain wave headsets threaten privacy · ISponsorBlockTV: SponsorBlock client for all YouTube TV clients · Amsterdam School · WaveD…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261108-0300.epub" type="application/epub+zip" length="100113"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261107-2100</id>
+    <title>HN Daily 2026-11-07 2100 UTC</title>
+    <updated>2026-11-08T00:09:10Z</updated>
+    <dc:issued>2026-11-07T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · The end of Microsoft Research's AI Frontiers group · What I run on my $10 USD OpenStick homelab · GitHub New pull request overview page in public preview · Making any integer with four 2s (2025) · Claude Code's "Don't Ask Again" exposes passwords in 1,122 public GitHub files · Apple’s grey list: Words and phrases your iPhone won’t help you spell · Show HN: Coldframe, a honeypot that…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261107-2100.epub" type="application/epub+zip" length="71762"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261107-0300</id>
+    <title>HN Daily 2026-11-07 0300 UTC</title>
+    <updated>2026-11-07T09:38:45Z</updated>
+    <dc:issued>2026-11-07T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Libghostty 1.0 · A barbarian tribe's mythic origin story is true, ancient DNA reveals · The Components of Agent Memory · PostgreSQL Internals [pdf] · RealPage rent-pricing case wraps with nearly $360M to renters · Asahi Linux Progress Linux 7.3 · Greece has its own Pompeii: Thera buried Akrotiri in ash 17th-16th century BCE · Bong: DuckDuckGo bang alternative, open-source and self-ho…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261107-0300.epub" type="application/epub+zip" length="144461"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261106-2100</id>
+    <title>HN Daily 2026-11-06 2100 UTC</title>
+    <updated>2026-11-07T00:35:13Z</updated>
+    <dc:issued>2026-11-06T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · CATL Sodium Battery Hits LFP Cost Parity in 2026: 15,000 Cycles, 30-Year Life · A Jev that can ask Opus for help gives Opus accuracy at 4x lower cost · ChatGPT silently passes data between connectors and the bounty wants an ID card · Firecracker VM Escape: PwnEscape Part 2 · Tesla to wind down Cybertruck production · US FAA says it will phase out floppy disks from air traffic control…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261106-2100.epub" type="application/epub+zip" length="90982"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261106-0300</id>
+    <title>HN Daily 2026-11-06 0300 UTC</title>
+    <updated>2026-11-06T10:25:03Z</updated>
+    <dc:issued>2026-11-06T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Blender's UI and Runtime: Much Faster Than GPUI · Kugelblitz – Mac-Native Google Earth Alternative · App Store 2026 in numbers: AI, pricing, abandoned apps · Multiplayer tanks that demolish real buildings from OpenStreetMap · Pwn.college · Hardcoded credentials and other issues in Tata Motors App · Nvidia Kubernetes Engine (NVKE) · From Linux to Wikipedia: How Volunteers Build the In…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261106-0300.epub" type="application/epub+zip" length="101468"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261105-2100</id>
+    <title>HN Daily 2026-11-05 2100 UTC</title>
+    <updated>2026-11-06T01:20:29Z</updated>
+    <dc:issued>2026-11-05T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Claude Code sends your email address to websites · Search for everyone · MS Paint Remote Code Execution Vulnerability · sshole · Alpine Linux Security Advisory: OpenSSH-server password authentication bypass · The Hackintosh Reborn · Inkling 2 Small · Window Sweaters · Tencent Launches Hy4, One of the Leading Open-Source AI Models · Launch HN: Rivet (YC W23) – Scale and Orchestrate Ag…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261105-2100.epub" type="application/epub+zip" length="85823"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261105-0300</id>
+    <title>HN Daily 2026-11-05 0300 UTC</title>
+    <updated>2026-11-05T10:23:04Z</updated>
+    <dc:issued>2026-11-05T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Lemmings CSS Animation · Baidu dropped ERNIE 5.5 Flash Base · Partial Operator Precedence · Spreading Liquid with Three.js · TextEdit vs. Pages · Altera Announces Agilex 2X, a Complete FPGA and SoC Portfolio · So my ISP was hijacking my DNS · Future Maintenance of Mbed TLS · OpenSSH 10.6p2 has been released with a workaround for a critical vulnerability · A wave of plastic-free coffe…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261105-0300.epub" type="application/epub+zip" length="114118"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261104-2100</id>
+    <title>HN Daily 2026-11-04 2100 UTC</title>
+    <updated>2026-11-05T01:15:11Z</updated>
+    <dc:issued>2026-11-04T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Residential proxies detected on White House network · Images 2.6 · A thousand fewer paths to root · AI is forcing us to pay off 40 years of technical debt · Ripple-65B Preview: U.S. Open-Weight SOTA on Agentic Coding · Insects don't swarm at LED lights · Kimi K3.1 Pro model weights are out · A new Go API for JSON · Hacking the Xbox 360 Hypervisor Part 3: Bad Update Improvements · Spa…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261104-2100.epub" type="application/epub+zip" length="87502"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261104-0300</id>
+    <title>HN Daily 2026-11-04 0300 UTC</title>
+    <updated>2026-11-04T10:30:09Z</updated>
+    <dc:issued>2026-11-04T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Kitty 0.50 · Verification Is Not Knowledge: Science needs more than answers · Nvidia DGX Spark encrypted firmware slows inference speed to 35% on Linux · Incident with Pull Requests, Git Operations and Issues · Jelly Sheet · Milkman – The Better Alternative to Postman · Osewa – An open-source alternative to SSH and Mosh · The lost malloc() · C++26 Disapproved · Show HN: Uncracked Cit…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261104-0300.epub" type="application/epub+zip" length="136903"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261103-2100</id>
+    <title>HN Daily 2026-11-03 2100 UTC</title>
+    <updated>2026-11-04T01:00:22Z</updated>
+    <dc:issued>2026-11-03T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · The Little Book of Generative AI Foundations: An Intuitive Mathematical Primer · Safari introduces Adaptive Dark Mode in 27.3 · The Internals of PostgreSQL · Jailbreaking my car's navigation system just so I can change the time · Stringman, an $800 open-source room scale gripper robot · Show HN: HackerTV – HN's most-recommended Youtube videos as 24/7 TV channels · Japan's Jimi 'Munda…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261103-2100.epub" type="application/epub+zip" length="84779"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261103-0300</id>
+    <title>HN Daily 2026-11-03 0300 UTC</title>
+    <updated>2026-11-03T10:28:51Z</updated>
+    <dc:issued>2026-11-03T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · No Vehicles in the Park · Nvidia – open-source auto-ontology · Toit v2.0.0 · European RISC-V Industrial Computing Initiative · Efficient algorithms, the Exponential Time Hypothesis, and losing the plot · Vathographs: Photographic depth maps as creative expression · Open-Source 5G Ran Platforms: A Dual Perspective on Performance and Capabilities · Optical Circuit Switch Technology Bui…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261103-0300.epub" type="application/epub+zip" length="66926"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261102-2100</id>
+    <title>HN Daily 2026-11-02 2100 UTC</title>
+    <updated>2026-11-03T02:44:56Z</updated>
+    <dc:issued>2026-11-02T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Astra can read and write weights to improve Qwen · Show HN: Hacker Times, a New York Times-Inspired Version Hacker News · DiscImageStudio: burn visible artwork onto CDs, DVDs and Blu-ray discs · Show HN: Subvocal – Talk to your computer without making noise · US boy names that became girl names and vice versa · If you love a website, back it up · Launch HN: Momentic (YC W24) – Agents…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261102-2100.epub" type="application/epub+zip" length="68407"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261102-0300</id>
+    <title>HN Daily 2026-11-02 0300 UTC</title>
+    <updated>2026-11-02T10:34:58Z</updated>
+    <dc:issued>2026-11-02T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Show HN: Wikihack – HackerTube, but for Wikipedia articles mentioned on HN · Postgres 19 is late because so many more bugs are being found now · F/OSS Comics #13: BSD Unix, Part 3 – The Beginning of BSD Unix · Bones may release proteins that slow aging and extend life span · From Charlemagne to the Kitchen Boy: Reading the Hamburg Rathaus · Trigger.dev customer environment variables…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261102-0300.epub" type="application/epub+zip" length="82688"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261101-2100</id>
+    <title>HN Daily 2026-11-01 2100 UTC</title>
+    <updated>2026-11-02T00:10:52Z</updated>
+    <dc:issued>2026-11-01T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Show HN: HackerBooks – HackerTube, but for books mentioned on HN · HackerTube: YouTube built from videos recommended by HN · Nibnib: Image compression with extreme decompression speed · Tips for more effective fuzz testing with AFL++ · Ask HN: Which TV do you recommend for privacy? · AI delivers 'zero financial payoff' to most companies, Apollo economist says · Keeping Up Appearances…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261101-2100.epub" type="application/epub+zip" length="108038"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261101-0300</id>
+    <title>HN Daily 2026-11-01 0300 UTC</title>
+    <updated>2026-11-01T10:06:13Z</updated>
+    <dc:issued>2026-11-01T03:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · Japan's trains are great. Why is booking one so hard? · The AI cost of JavaScript frameworks · Running a bootstrapped SaaS for 20 years with my brother · Brazilian Court Sanctions Lawyers for Prompt Injection in Court Filing · No AI, 52 min. Build all Linux Files utils in C by Hand [video] · OpenIDEA: The IDE you know, rebuilt in Rust · Leaking Secrets from Air-Gap Computers by Spell…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261101-0300.epub" type="application/epub+zip" length="69657"/>
+  </entry>
+  <entry>
+    <id>urn:xtpages:issue:20261031-2100</id>
+    <title>HN Daily 2026-10-31 2100 UTC</title>
+    <updated>2026-10-31T23:55:31Z</updated>
+    <dc:issued>2026-10-31T21:00:00Z</dc:issued>
+    <dc:language>en</dc:language>
+    <author>
+      <name>Hacker News</name>
+    </author>
+    <summary type="text">20 stories · HackerTube: YouTube built from videos recommended by HN · TCP Use-After-Free: CVE-2026-98432 / CVSS 9.8 · An Italian farmer found some unknown seeds in his attic and planted them · When Electric Cars Were for Women · It's the Memory Latency, Stupid · With 86% of the words, you might understand only 38% of an anime's lines · First response from the Project Suncatcher prototype satelli…</summary>
+    <link rel="http://opds-spec.org/acquisition" href="https://nfl-nzr.github.io/hackernews-opds-catalog/issues/hn-20261031-2100.epub" type="application/epub+zip" length="155914"/>
+  </entry>
+</feed>
